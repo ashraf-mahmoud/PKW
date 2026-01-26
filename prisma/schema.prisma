@@ -1,0 +1,257 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+// Enums removed for SQLite compatibility. 
+// Role: ADMIN, COACH, PARENT
+// ClassType: PARKOUR, TRICKING, KIDS, ADULTS, WORKSHOP
+// BookingStatus: PENDING, CONFIRMED, CANCELLED, WAITLIST
+// AttendanceStatus: PRESENT, ABSENT, LATE, EXCUSED
+
+// User & Auth
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?   
+  role          String    @default("PARENT")
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  profile       UserProfile?
+  students      Student[] // Linked children/students
+  
+  // For Coaches
+  coachedSessions ClassSession[] @relation("SessionCoaches")
+  coachedSchedules ClassSchedule[] @relation("ScheduleCoaches")
+
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model UserProfile {
+  id          String @id @default(cuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  phone       String?
+  phone2      String?
+  address     String?
+  
+  marketingSource String?
+  trialDate       DateTime?
+  
+  waiverSigned Boolean @default(false)
+  waiverFile   String?
+
+  ecName      String? // Emergency Contact
+  ecPhone     String?
+}
+
+model Student {
+  id          String   @id @default(cuid())
+  parentId    String
+  parent      User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  
+  name        String
+  studentCode String? // PK00xx
+  dob         DateTime
+  medicalInfo String?
+  
+  waiverSigned Boolean @default(false)
+  waiverFile   String?
+  
+  // Relations
+  bookings    Booking[]
+  waivers     Waiver[]
+  attendance  Attendance[]
+  
+  level       Int      @default(1)
+  isTrial     Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Auth.js / NextAuth models
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Academy Domain Models
+
+model Location {
+  id            String   @id @default(cuid())
+  name          String
+  address       String
+  googleMapsUrl String?
+  
+  description       String?
+  attireInfo        String?
+  directionVideoUrl String?
+  rules             String?
+  
+  images        LocationImage[]
+  sessions      ClassSession[]
+  schedules     ClassSchedule[]
+}
+
+model LocationImage {
+  id         String   @id @default(cuid())
+  url        String
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+model ClassTemplate {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String    @default("PARKOUR")
+  levelMin    Int       @default(1)
+  levelMax    Int       @default(6)
+  capacity    Int       @default(10)
+  price       Float     @default(0.0) // Single class price
+  durationMin Int       @default(60)
+  
+  ageMin      Int       @default(5)
+  ageMax      Int       @default(17)
+  sessions    ClassSession[]
+  schedules   ClassSchedule[]
+}
+
+model ClassSchedule {
+  id          String    @id @default(cuid())
+  templateId  String
+  template    ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id])
+  
+  dayOfWeek   Int       // 0-6
+  startTime   DateTime  // Only time matters
+  durationMin Int       @default(60)
+
+  coaches     User[]    @relation("ScheduleCoaches")
+
+  sessions    ClassSession[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ClassSession {
+  id              String   @id @default(cuid())
+  templateId      String
+  template        ClassTemplate @relation(fields: [templateId], references: [id])
+  
+  scheduleId      String?
+  schedule        ClassSchedule? @relation(fields: [scheduleId], references: [id])
+
+  locationId      String
+  location        Location @relation(fields: [locationId], references: [id])
+  
+  coaches         User[]   @relation("SessionCoaches")
+  
+  startTime       DateTime
+  endTime         DateTime
+  
+  bookings        Booking[]
+}
+
+model AgeGroup {
+  id      String @id @default(cuid())
+  name    String // e.g. "3-4", "Teens"
+  minAge  Int
+  maxAge  Int
+}
+
+
+
+model Booking {
+  id              String        @id @default(cuid())
+  studentId       String
+  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  classSessionId  String
+  classSession    ClassSession  @relation(fields: [classSessionId], references: [id])
+  
+  status          String        @default("PENDING")
+  bookedAt        DateTime      @default(now())
+  
+  pricePaid       Float?
+  paymentMethod   String? // Stripe, Cash, etc.
+  
+  attendance      Attendance?
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  bookingId String           @unique
+  booking   Booking          @relation(fields: [bookingId], references: [id])
+  
+  studentId String
+  student   Student          @relation(fields: [studentId], references: [id])
+  
+  status    String           @default("PRESENT")
+  notes     String?
+  
+  recordedAt DateTime @default(now())
+}
+
+model Waiver {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  
+  url       String?  // URL to PDF
+  signedAt  DateTime @default(now())
+  version   String   @default("1.0")
+  
+  guardianName       String?
+  guardianSignature  String? // Base64 or stored ref
+}
