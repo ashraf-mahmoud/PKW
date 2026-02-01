@@ -32,12 +32,19 @@ async function main() {
         }
     })
 
-    // 3. Class Templates
+    // 3. Class Types
+    const parkourType = await prisma.classType.upsert({
+        where: { name: 'PARKOUR' },
+        update: {},
+        create: { name: 'PARKOUR' }
+    })
+
+    // 4. Class Templates
     const beginnerParkour = await prisma.classTemplate.create({
         data: {
             name: "Parkour Level 1",
             description: "Introduction to parkour movements.",
-            type: 'PARKOUR',
+            type: { connect: { id: parkourType.id } },
             levelMin: 1,
             levelMax: 1,
             capacity: 10,
