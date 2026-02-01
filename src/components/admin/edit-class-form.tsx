@@ -3,6 +3,7 @@
 import { updateClassTemplate } from "@/actions/classes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -16,11 +17,12 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 
-export default function EditClassForm({ template }: { template: any }) {
+export default function EditClassForm({ template, types }: { template: any, types: any[] }) {
     const router = useRouter()
     const { toast } = useToast()
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [type, setType] = useState(template.type)
+    const [type, setType] = useState(template.typeId || "")
+    const [hasNoMaxAge, setHasNoMaxAge] = useState(template.hasNoMaxAge || false)
 
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -69,10 +71,12 @@ export default function EditClassForm({ template }: { template: any }) {
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="PARKOUR">Parkour</SelectItem>
-                                <SelectItem value="TRICKING">Tricking</SelectItem>
-                                <SelectItem value="KIDS">Kids General</SelectItem>
-                                <SelectItem value="WORKSHOP">Workshop</SelectItem>
+                                {types.map(t => (
+                                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                ))}
+                                {types.length === 0 && (
+                                    <SelectItem value="none" disabled>No types defined</SelectItem>
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
@@ -89,7 +93,27 @@ export default function EditClassForm({ template }: { template: any }) {
                     </div>
                     <div>
                         <Label htmlFor="ageMax">Max Age</Label>
-                        <Input type="number" name="ageMax" defaultValue={template.ageMax} min="3" required />
+                        <Input
+                            type="number"
+                            name="ageMax"
+                            defaultValue={template.ageMax}
+                            min="3"
+                            disabled={hasNoMaxAge}
+                        />
+                        <div className="flex items-center space-x-2 mt-2">
+                            <Checkbox
+                                id="hasNoMaxAge"
+                                name="hasNoMaxAge"
+                                checked={hasNoMaxAge}
+                                onChange={(e) => setHasNoMaxAge(e.target.checked)}
+                            />
+                            <label
+                                htmlFor="hasNoMaxAge"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                No Max Age
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -106,12 +130,26 @@ export default function EditClassForm({ template }: { template: any }) {
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <Label htmlFor="capacity">Capacity</Label>
-                        <Input type="number" name="capacity" defaultValue={template.capacity} min="1" required />
-                    </div>
-                    <div>
                         <Label htmlFor="price">Base Price</Label>
                         <Input type="number" name="price" defaultValue={template.price} min="0" step="0.01" required />
+                    </div>
+                    <div>
+                        <Label htmlFor="capacity">Default Capacity</Label>
+                        <Input type="number" name="capacity" defaultValue={template.capacity} min="1" required />
+                    </div>
+                </div>
+
+                <div>
+                    <Label htmlFor="color">Timeline Color</Label>
+                    <div className="flex gap-4 items-center mt-2">
+                        <Input
+                            type="color"
+                            name="color"
+                            id="color"
+                            defaultValue={template.color || "#3b82f6"}
+                            className="w-20 h-10 p-1 cursor-pointer"
+                        />
+                        <span className="text-sm text-muted-foreground">Select a color to represent this class on the timetable.</span>
                     </div>
                 </div>
             </div>
@@ -122,6 +160,6 @@ export default function EditClassForm({ template }: { template: any }) {
                     {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
             </div>
-        </form>
+        </form >
     )
 }

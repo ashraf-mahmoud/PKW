@@ -1,13 +1,10 @@
 import { auth } from '@/auth'
 import Link from 'next/link'
-import { LayoutDashboard, Calendar, Users, Settings, LogOut, MapPin } from "lucide-react"
-
-const dashboardLinks = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/classes", label: "Classes", icon: Calendar },
-    { href: "/dashboard/locations", label: "Locations", icon: MapPin },
-    { href: "/dashboard/coaches", label: "Coaches", icon: Users },
-]
+import { LayoutDashboard } from "lucide-react"
+import { Toaster } from "@/components/ui/toaster"
+import LogoutButton from '@/components/admin/logout-button'
+import { dashboardLinks, adminLinks, parentLinks } from "@/config/dashboard-nav"
+import MobileNav from "@/components/layout/mobile-nav"
 
 export default async function DashboardLayout({
     children,
@@ -18,8 +15,12 @@ export default async function DashboardLayout({
     const user = session?.user
 
     return (
-        <div className="flex min-h-screen bg-background">
-            <aside className="w-64 bg-card border-r border-border p-8 flex flex-col">
+        <div className="flex min-h-screen bg-background flex-col md:flex-row">
+            {/* Mobile Navigation */}
+            <MobileNav user={user as any} />
+
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex w-64 bg-card border-r border-border p-8 flex-col fixed inset-y-0 left-0 z-30">
                 <div className="font-display font-bold text-2xl mb-8 text-primary">PKW Admin</div>
 
                 <div className="mb-8 pb-8 border-b border-border">
@@ -27,41 +28,59 @@ export default async function DashboardLayout({
                     <div className="text-sm text-muted-foreground">{user?.role || 'Guest'}</div>
                 </div>
 
-                <nav className="flex flex-col gap-2 flex-1">
-                    {dashboardLinks.map((link) => (
-                        <Link key={link.href} href={link.href} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
-                            <link.icon className="h-5 w-5" />
-                            {link.label}
-                        </Link>
-                    ))}
-                    <Link href="/dashboard/bookings" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
-                        <Calendar className="h-5 w-5" />
-                        Bookings
+                <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
+                    <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
+                        <LayoutDashboard className="h-5 w-5" />
+                        Overview
                     </Link>
+
                     {user?.role === 'ADMIN' && (
                         <>
-                            <Link href="/dashboard/users" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
-                                <Users className="h-5 w-5" />
-                                Users
-                            </Link>
-                            <Link href="/dashboard/settings/age-groups" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
-                                <Settings className="h-5 w-5" />
-                                Age Groups
-                            </Link>
+                            <div className="mt-4 mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground">Manage</div>
+                            {dashboardLinks.map((link) => (
+                                <Link key={link.href} href={link.href} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
+                                    <link.icon className="h-5 w-5" />
+                                    {link.label}
+                                </Link>
+                            ))}
+                            {adminLinks.map((link) => (
+                                <Link key={link.href} href={link.href} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
+                                    <link.icon className="h-5 w-5" />
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </>
+                    )}
+
+
+                    {user?.role === 'PARENT' && (
+                        <>
+                            <div className="mt-4 mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground">Menu</div>
+                            {parentLinks.map((link) => (
+                                <Link key={link.href} href={link.href} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground">
+                                    <link.icon className="h-5 w-5" />
+                                    {link.label}
+                                </Link>
+                            ))}
                         </>
                     )}
                 </nav>
 
-                <div className="mt-auto">
-                    <Link href="/" className="px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground block">
+                <div className="mt-auto space-y-2 pt-4 border-t border-border">
+                    <LogoutButton variant="sidebar" />
+
+                    <Link href="/" className="px-4 py-3 rounded-lg text-sm transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground block flex items-center gap-3">
+                        <span className="w-5" /> {/* Spacer for alignment if using icon, or just text */}
                         Back Home
                     </Link>
                 </div>
-            </aside>
+            </aside >
 
-            <main className="flex-1 p-8 bg-background">
+            {/* Main Content */}
+            <main className="flex-1 p-4 md:p-8 bg-background md:ml-64 w-full">
                 {children}
             </main>
-        </div>
+            <Toaster />
+        </div >
     )
 }

@@ -43,7 +43,19 @@ export default function LocationForm({ location }: { location?: any }) {
                 <div className="space-y-4">
                     <div>
                         <Label htmlFor="name">Location Name *</Label>
-                        <Input name="name" id="name" defaultValue={location?.name} placeholder="e.g. Downtown Gym" required />
+                        <div className="flex gap-4">
+                            <Input name="name" id="name" defaultValue={location?.name} placeholder="e.g. Downtown Gym" className="flex-1" required />
+                            <div className="flex flex-col gap-1 items-center">
+                                <Input
+                                    type="color"
+                                    name="color"
+                                    id="color"
+                                    defaultValue={location?.color || "#3b82f6"}
+                                    className="w-12 h-10 p-1 cursor-pointer"
+                                    title="Timeline Color"
+                                />
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <Label htmlFor="address">Address *</Label>

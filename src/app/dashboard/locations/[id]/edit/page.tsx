@@ -1,6 +1,7 @@
 import { getLocation } from "@/actions/locations"
 import LocationForm from "@/components/admin/location-form"
 import { notFound } from "next/navigation"
+import BackButton from "@/components/ui/back-button"
 
 export default async function EditLocationPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -10,6 +11,7 @@ export default async function EditLocationPage({ params }: { params: Promise<{ i
 
     return (
         <div className="max-w-2xl mx-auto">
+            <BackButton href="/dashboard/locations" />
             <div className="mb-6">
                 <h1 className="text-3xl font-bold font-display mb-2">Edit Location</h1>
                 <p className="text-muted-foreground">Update details for {location.name}.</p>

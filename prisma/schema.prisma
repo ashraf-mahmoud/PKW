@@ -24,82 +24,89 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  passwordHash  String?   
+  passwordHash  String?
   role          String    @default("PARENT")
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  profile       UserProfile?
-  students      Student[] // Linked children/students
-  
+  profile  UserProfile?
+  students Student[] // Linked children/students
+
   // For Coaches
-  coachedSessions ClassSession[] @relation("SessionCoaches")
+  coachedSessions  ClassSession[]  @relation("SessionCoaches")
   coachedSchedules ClassSchedule[] @relation("ScheduleCoaches")
 
-  accounts      Account[]
-  sessions      Session[]
+  accounts Account[]
+  sessions Session[]
+
+  adminLogs AuditLog[] @relation("AdminLogs")
 }
 
 model UserProfile {
-  id          String @id @default(cuid())
-  userId      String @unique
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  phone       String?
-  phone2      String?
-  address     String?
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  phone   String?
+  phone2  String?
+  address String?
+
   marketingSource String?
   trialDate       DateTime?
-  
+
   waiverSigned Boolean @default(false)
   waiverFile   String?
 
-  ecName      String? // Emergency Contact
-  ecPhone     String?
+  ecName  String? // Emergency Contact
+  ecPhone String?
 }
 
 model Student {
-  id          String   @id @default(cuid())
-  parentId    String
-  parent      User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  
+  id       String @id @default(cuid())
+  parentId String
+  parent   User   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
   name        String
   studentCode String? // PK00xx
   dob         DateTime
   medicalInfo String?
-  
+
   waiverSigned Boolean @default(false)
   waiverFile   String?
-  
+
   // Relations
-  bookings    Booking[]
-  waivers     Waiver[]
-  attendance  Attendance[]
-  
-  level       Int      @default(1)
-  isTrial     Boolean  @default(false)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  bookings        Booking[]
+  waivers         Waiver[]
+  attendance      Attendance[]
+  studentPackages StudentPackage[]
+  payments        Payment[]
+
+  level   Int     @default(1)
+  isTrial Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
+  creditLedger CreditLedger[]
 }
 
 // Auth.js / NextAuth models
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -125,19 +132,20 @@ model VerificationToken {
 // Academy Domain Models
 
 model Location {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   name          String
   address       String
   googleMapsUrl String?
-  
+
   description       String?
   attireInfo        String?
   directionVideoUrl String?
   rules             String?
-  
-  images        LocationImage[]
-  sessions      ClassSession[]
-  schedules     ClassSchedule[]
+  color             String  @default("#3b82f6")
+
+  images    LocationImage[]
+  sessions  ClassSession[]
+  schedules ClassSchedule[]
 }
 
 model LocationImage {
@@ -147,111 +155,255 @@ model LocationImage {
   location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 }
 
+model ClassType {
+  id   String @id @default(cuid())
+  name String @unique
+
+  templates ClassTemplate[]
+}
+
 model ClassTemplate {
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
-  type        String    @default("PARKOUR")
-  levelMin    Int       @default(1)
-  levelMax    Int       @default(6)
-  capacity    Int       @default(10)
-  price       Float     @default(0.0) // Single class price
-  durationMin Int       @default(60)
   
-  ageMin      Int       @default(5)
-  ageMax      Int       @default(17)
-  sessions    ClassSession[]
-  schedules   ClassSchedule[]
+  typeId      String?
+  type        ClassType? @relation(fields: [typeId], references: [id])
+  typeOld     String?    @map("type")
+  
+  levelMin    Int     @default(1)
+  levelMax    Int     @default(6)
+  price       Float   @default(0.0) // Single class price
+  durationMin Int     @default(60)
+
+  ageMin    Int             @default(5)
+  ageMax    Int             @default(17)
+  hasNoMaxAge Boolean       @default(false) // Added
+  capacity  Int             @default(15)
+  color     String          @default("#3b82f6") // Added: default color
+  sessions  ClassSession[]
+  schedules ClassSchedule[]
 }
 
 model ClassSchedule {
-  id          String    @id @default(cuid())
-  templateId  String
-  template    ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  
-  locationId  String
-  location    Location @relation(fields: [locationId], references: [id])
-  
-  dayOfWeek   Int       // 0-6
-  startTime   DateTime  // Only time matters
-  durationMin Int       @default(60)
+  id         String        @id @default(cuid())
+  templateId String
+  template   ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-  coaches     User[]    @relation("ScheduleCoaches")
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
 
-  sessions    ClassSession[]
+  ageGroupId String?
+  ageGroup   AgeGroup? @relation(fields: [ageGroupId], references: [id])
+
+  dayOfWeek   Int // 0-6
+  startTime   DateTime // Only time matters
+  durationMin Int      @default(60)
+  capacity    Int?     // Optional Override
+  startDate   DateTime? // Optional start date for recurrence
+  endDate     DateTime? // Optional end date for recurrence
+  recurrence  String    @default("WEEKLY") // "WEEKLY" | "DAILY"
   
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  // Overrides
+  ageMin      Int?
+  ageMax      Int?
+  hasNoMaxAge Boolean? // Optional Override
+  levelMin    Int?
+  levelMax    Int?
+
+  coaches User[] @relation("ScheduleCoaches")
+
+  sessions ClassSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ClassSession {
-  id              String   @id @default(cuid())
-  templateId      String
-  template        ClassTemplate @relation(fields: [templateId], references: [id])
-  
-  scheduleId      String?
-  schedule        ClassSchedule? @relation(fields: [scheduleId], references: [id])
+  id         String        @id @default(cuid())
+  templateId String
+  template   ClassTemplate @relation(fields: [templateId], references: [id])
 
-  locationId      String
-  location        Location @relation(fields: [locationId], references: [id])
-  
-  coaches         User[]   @relation("SessionCoaches")
-  
-  startTime       DateTime
-  endTime         DateTime
-  
-  bookings        Booking[]
+  scheduleId String?
+  schedule   ClassSchedule? @relation(fields: [scheduleId], references: [id])
+
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+
+  coaches User[] @relation("SessionCoaches")
+
+  startTime DateTime
+  endTime   DateTime
+
+  bookings Booking[]
 }
 
 model AgeGroup {
-  id      String @id @default(cuid())
-  name    String // e.g. "3-4", "Teens"
-  minAge  Int
-  maxAge  Int
+  id            String          @id @default(cuid())
+  name          String // e.g. "3-4", "Teens"
+  minAge        Int
+  maxAge        Int
+  ClassSchedule ClassSchedule[]
+  PackagePrice  PackagePrice[]
 }
 
-
-
 model Booking {
-  id              String        @id @default(cuid())
-  studentId       String
-  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classSessionId String
+  classSession   ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+
+  status   String   @default("PENDING")
+  bookedAt DateTime @default(now())
+
+  pricePaid     Float?
+  paymentMethod String? // Stripe, Cash, etc.
+
+  attendance Attendance?
   
-  classSessionId  String
-  classSession    ClassSession  @relation(fields: [classSessionId], references: [id])
+  // New Credit Tracking
+  creditsCharged    Int?      @default(1)
+  packagePurchaseId String?
+  packagePurchase   StudentPackage? @relation("PackageBookings", fields: [packagePurchaseId], references: [id])
   
-  status          String        @default("PENDING")
-  bookedAt        DateTime      @default(now())
-  
-  pricePaid       Float?
-  paymentMethod   String? // Stripe, Cash, etc.
-  
-  attendance      Attendance?
+  creditLedger      CreditLedger[]
+  payments          Payment[]
 }
 
 model Attendance {
-  id        String           @id @default(cuid())
-  bookingId String           @unique
-  booking   Booking          @relation(fields: [bookingId], references: [id])
-  
+  id        String  @id @default(cuid())
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
   studentId String
-  student   Student          @relation(fields: [studentId], references: [id])
-  
-  status    String           @default("PRESENT")
-  notes     String?
-  
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  status String  @default("PRESENT")
+  notes  String?
+
   recordedAt DateTime @default(now())
 }
 
 model Waiver {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   studentId String
-  student   Student  @relation(fields: [studentId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  url      String? // URL to PDF
+  signedAt DateTime @default(now())
+  version  String   @default("1.0")
+
+  guardianName      String?
+  guardianSignature String? // Base64 or stored ref
+}
+
+model Package {
+  id           String @id @default(cuid())
+  name         String
+  type         String // TRIAL, MONTHLY_4, MONTHLY_8, EXTRA, UNLIMITED
+  creditCount  Int // 1, 4, 8, 1, 9999
+  validityDays Int // 30 usually
+
+  prices      PackagePrice[]
+  purchasedBy StudentPackage[]
+  payments    Payment[]
+}
+
+model PackagePrice {
+  id         String   @id @default(cuid())
+  packageId  String
+  package    Package  @relation(fields: [packageId], references: [id])
+  ageGroupId String
+  ageGroup   AgeGroup @relation(fields: [ageGroupId], references: [id])
+  price      Decimal
+
+  @@unique([packageId, ageGroupId])
+}
+
+model StudentPackage {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  packageId String
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  remainingCredits Int
+  startDate        DateTime  @default(now())
+  expiryDate       DateTime?
+  active           Boolean   @default(true)
   
-  url       String?  // URL to PDF
-  signedAt  DateTime @default(now())
-  version   String   @default("1.0")
+  // New Activation Fields
+  status           String    @default("PENDING_ACTIVATION") // PENDING_ACTIVATION, ACTIVE, EXPIRED, DEPLETED
+  activatedAt      DateTime?
+  validFrom        DateTime?
+  validUntil       DateTime?
+
+  // Link to payment
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id])
   
-  guardianName       String?
-  guardianSignature  String? // Base64 or stored ref
+  bookings  Booking[] @relation("PackageBookings")
+  creditLedger CreditLedger[]
+}
+
+model Payment {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  packageId String?
+  package   Package? @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  amount    Decimal
+  method    String // CASH, TRANSFER, GATEWAY
+  status    String  @default("COMPLETED") // PENDING, COMPLETED, FAILED
+  reference String? // Bank ref
+  invoiceUrl String? // Link to PDF or record
+
+  date DateTime @default(now())
+
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  studentPackage StudentPackage?
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String?
+  admin       User?    @relation("AdminLogs", fields: [adminId], references: [id], onDelete: SetNull)
+  action      String   // e.g., "BOOKING_CREATE", "BOOKING_MOVE", "BOOKING_CANCEL", "PAYMENT_ADD", "STUDENT_PACKAGE_CREATE"
+  entityType  String   // e.g., "BOOKING", "PAYMENT", "STUDENT_PACKAGE"
+  entityId    String   // The ID of the affected record
+  studentId   String?
+  studentName String?  // Snapshot of name at time of action
+  student     Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  details     String?  // JSON string for extra info
+  createdAt   DateTime @default(now())
+}
+
+model CreditLedger {
+  id                String   @id @default(cuid())
+  studentId         String
+  student           Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  packagePurchaseId String?
+  packagePurchase   StudentPackage? @relation(fields: [packagePurchaseId], references: [id], onDelete: Cascade)
+  
+  bookingId         String?
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  type              String   // DEBIT, CREDIT
+  amount            Int
+  reason            String   // BOOKING_CREATED, BOOKING_CANCELLED, ADMIN_ADJUSTMENT, REFUND
+  
+  createdAt         DateTime @default(now())
+}
+
+model SystemSettings {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

@@ -31,6 +31,7 @@ async function main() {
         parentName: string,
         email: string,
         phone: string,
+        phone2: string,
         students: any[]
     }>()
 
@@ -54,15 +55,45 @@ async function main() {
         }
 
         // 2. Extract Phone
-        let phone = row['Phone number'] || ""
-        if (!phone && row['WhatsApp']) {
-            const match = row['WhatsApp'].match(/phone=(\d+)/)
-            if (match) phone = match[1]
+        let phone1 = row['Phone number'] || ""
+        let phone2 = ""
+
+        if (row['WhatsApp']) {
+            // Check if WhatsApp column has a number
+            let wa = row['WhatsApp']
+            // Sometimes it might be a link or text, try to extract digits
+            const match = wa.match(/(?:phone=)?(\+?\d+)/)
+            if (match) {
+                // If phone1 is empty, use this as phone1, else use as phone2
+                if (!phone1) phone1 = match[1]
+                else if (match[1] !== phone1.replace(/\s/g, '')) phone2 = match[1] // Only if different
+            } else {
+                // Direct digits?
+                const cleanWa = wa.replace(/[^0-9+]/g, '')
+                if (cleanWa.length > 6) {
+                    if (!phone1) phone1 = cleanWa
+                    else if (cleanWa !== phone1.replace(/\s/g, '')) phone2 = cleanWa
+                }
+            }
         }
-        phone = phone.replace(/\s/g, '').replace(/-/g, '').replace(/\+/g, '')
-        // Ensure + prefix if missing but looks like country code?
-        // Or just leave as digits.
-        if (phone && !phone.startsWith('+')) phone = '+' + phone
+
+        // Helper to format phone
+        const formatPhone = (p: string) => {
+            if (!p) return ""
+            let clean = p.replace(/\s/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '')
+            // If starts with 0 (e.g. 012...), replace with +60? Or just leave it?
+            // User requested "add ... if found with there country codes".
+            // If it starts with +, assume it has code.
+            // If it starts with 60, add +
+            if (clean.startsWith('60')) clean = '+' + clean
+            else if (clean.startsWith('01')) clean = '+60' + clean.substring(1) // Malaysia default
+            else if (!clean.startsWith('+') && clean.length > 5) clean = '+' + clean // naive add +
+
+            return clean
+        }
+
+        phone1 = formatPhone(phone1)
+        phone2 = formatPhone(phone2)
 
         // 3. Determine Family Key        // Determine Email / Key
         let email = row['Email Address']
@@ -74,12 +105,12 @@ async function main() {
         } else {
             // No Email -> Use Phone as Key
             email = null
-            const sanitizedPhone = phone || "nophone"
+            const sanitizedPhone = phone1 || "nophone"
             // If phone is missing, use sanitized name?
             const sanitizedName = parentName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
 
-            if (phone) {
-                familyKey = "phone:" + phone
+            if (phone1) {
+                familyKey = "phone:" + phone1
             } else {
                 familyKey = "name:" + sanitizedName // Risky fallback
             }
@@ -89,7 +120,8 @@ async function main() {
             familyMap.set(familyKey, {
                 parentName,
                 email, // This is null if missing
-                phone,
+                phone: phone1,
+                phone2: phone2,
                 students: []
             })
         }
@@ -165,8 +197,15 @@ async function main() {
             // Upsert Profile
             await db.userProfile.upsert({
                 where: { userId: user.id },
-                update: { phone: family.phone }, // Update phone just in case
-                create: { userId: user.id, phone: family.phone }
+                update: {
+                    phone: family.phone,
+                    phone2: family.phone2 || undefined // Update phone2 if present
+                },
+                create: {
+                    userId: user.id,
+                    phone: family.phone,
+                    phone2: family.phone2
+                }
             })
             if (user.id) userCount++
 

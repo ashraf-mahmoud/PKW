@@ -12,6 +12,7 @@ const LocationSchema = z.object({
     attireInfo: z.string().optional().or(z.literal('')),
     directionVideoUrl: z.string().url().optional().or(z.literal('')),
     rules: z.string().optional().or(z.literal('')),
+    color: z.string().optional().or(z.literal('')),
     // Expecting array of image URLs
     // Since FormData can have multiple entries for same key, or stringified JSON
     imageUrls: z.string().optional() // We'll parse manual JSON string or handle array manually in function
@@ -26,6 +27,7 @@ export async function createLocation(formData: FormData) {
         attireInfo: formData.get('attireInfo'),
         directionVideoUrl: formData.get('directionVideoUrl'),
         rules: formData.get('rules'),
+        color: formData.get('color'),
         imageUrls: formData.get('imageUrls') // JSON string of string[]
     }
 
@@ -42,6 +44,7 @@ export async function createLocation(formData: FormData) {
             attireInfo: validatedData.attireInfo || null,
             directionVideoUrl: validatedData.directionVideoUrl || null,
             rules: validatedData.rules || null,
+            color: validatedData.color || '#3b82f6',
             images: {
                 create: imageUrls.map((url: string) => ({ url }))
             }
@@ -72,6 +75,7 @@ export async function updateLocation(id: string, formData: FormData) {
         attireInfo: formData.get('attireInfo'),
         directionVideoUrl: formData.get('directionVideoUrl'),
         rules: formData.get('rules'),
+        color: formData.get('color'),
         imageUrls: formData.get('imageUrls')
     }
 
@@ -87,6 +91,7 @@ export async function updateLocation(id: string, formData: FormData) {
             attireInfo: validatedData.attireInfo || null,
             directionVideoUrl: validatedData.directionVideoUrl || null,
             rules: validatedData.rules || null,
+            color: validatedData.color || '#3b82f6',
         }
 
         // Explicitly update images: Delete all and recreate to sync

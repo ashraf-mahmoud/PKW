@@ -2,48 +2,37 @@
 
 import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
 
-const AgeGroupSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    minAge: z.coerce.number().min(0, "Min age must be 0+"),
-    maxAge: z.coerce.number().min(0, "Max age must be 0+"),
-})
-
-export async function getAgeGroups() {
-    return await (db as any).ageGroup.findMany({
-        orderBy: { minAge: 'asc' }
-    })
-}
-
-export async function createAgeGroup(formData: FormData) {
+export async function getCurrency() {
     try {
-        const rawData = {
-            name: formData.get('name'),
-            minAge: formData.get('minAge'),
-            maxAge: formData.get('maxAge'),
-        }
-
-        const validated = AgeGroupSchema.parse(rawData)
-
-        await (db as any).ageGroup.create({
-            data: validated
+        const setting = await db.systemSettings.findUnique({
+            where: { key: 'currency' }
         })
-
-        revalidatePath('/dashboard/settings/age-groups')
-        return { success: true }
+        // Default to USD if not set
+        return setting?.value || 'USD'
     } catch (error) {
-        console.error("Create Age Group Error:", error)
-        return { success: false, error: (error as Error).message }
+        console.error("Failed to fetch currency:", error)
+        return 'USD'
     }
 }
 
-export async function deleteAgeGroup(id: string) {
+export async function setCurrency(currencyCode: string) {
     try {
-        await (db as any).ageGroup.delete({ where: { id } })
-        revalidatePath('/dashboard/settings/age-groups')
+        await db.systemSettings.upsert({
+            where: { key: 'currency' },
+            create: {
+                key: 'currency',
+                value: currencyCode
+            },
+            update: {
+                value: currencyCode
+            }
+        })
+
+        revalidatePath('/')
         return { success: true }
     } catch (error) {
-        return { success: false, error: 'Failed to delete' }
+        console.error("Failed to set currency:", error)
+        return { success: false, error: "Failed to update currency" }
     }
 }

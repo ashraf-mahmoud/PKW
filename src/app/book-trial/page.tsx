@@ -1,6 +1,7 @@
 import { getLocations, getUpcomingSessions } from "@/actions/classes"
+import { getClassTypes } from "@/actions/class-types"
 import { getCoaches } from "@/actions/coaches"
-import { getAgeGroups } from "@/actions/settings"
+import { getAgeGroups } from "@/actions/age-groups"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Users } from "lucide-react"
 import Link from "next/link"
@@ -24,6 +25,14 @@ export default async function BookTrialPage({
     const locations = await getLocations()
     const coaches = await getCoaches()
     const ageGroups = await getAgeGroups()
+    const types = await getClassTypes()
+
+    const today = new Date()
+    const currentWeekStart = startOfWeek(addWeeks(today, weekOffset), { weekStartsOn: 1 })
+    // End date should cover the full week. 
+    // We want sessions that start on any day of this week.
+    // The next Monday is the cutoff.
+    const currentWeekEnd = addDays(currentWeekStart, 7)
 
     // Get all sessions for calendar view with filters
     const allSessions = await getUpcomingSessions({
@@ -32,7 +41,9 @@ export default async function BookTrialPage({
         coachId,
         level,
         age,
-        ageGroupId: resolvedParams.ageGroupId as string
+        ageGroupId: resolvedParams.ageGroupId as string,
+        startDate: currentWeekStart,
+        endDate: currentWeekEnd
     })
 
     return (
@@ -49,7 +60,7 @@ export default async function BookTrialPage({
             </section>
 
             <section className="py-12 px-4 container mx-auto max-w-7xl">
-                <TimetableFilters locations={locations} coaches={coaches} ageGroups={ageGroups} />
+                <TimetableFilters locations={locations} coaches={coaches} ageGroups={ageGroups} types={types} />
                 <WeeklyCalendar sessions={allSessions} weekOffset={weekOffset} />
             </section>
         </div>

@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { signIn } from 'next-auth/react' // Client side sign in
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
@@ -73,6 +74,20 @@ export default function LoginPage() {
 
                     <Button type="submit" className="w-full">Sign In</Button>
                 </form>
+
+                <div className="text-center space-y-2 text-sm">
+                    <div>
+                        <Link href="/forgot-password" className="text-muted-foreground hover:text-primary underline">
+                            Forgot your password?
+                        </Link>
+                    </div>
+                    <div>
+                        Don't have an account?{" "}
+                        <Link href="/signup" className="font-semibold text-primary hover:underline">
+                            Sign Up
+                        </Link>
+                    </div>
+                </div>
             </div>
         </div>
     )

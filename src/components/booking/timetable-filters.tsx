@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {
     Select,
     SelectContent,
@@ -11,18 +11,51 @@ import {
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 
-export default function TimetableFilters({ locations, coaches, ageGroups = [] }: { locations: any[], coaches: any[], ageGroups?: any[] }) {
+export default function TimetableFilters({
+    locations,
+    coaches,
+    ageGroups = [],
+    types,
+    onFilterChange,
+    onReset,
+    currentFilters
+}: {
+    locations: any[],
+    coaches: any[],
+    ageGroups?: any[],
+    types: any[],
+    onFilterChange?: (filters: any) => void,
+    onReset?: () => void,
+    currentFilters?: any
+}) {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const pathname = usePathname()
 
     const updateFilter = (key: string, value: string) => {
+        if (onFilterChange && currentFilters) {
+            const newFilters = { ...currentFilters }
+            if (value && value !== 'all') {
+                newFilters[key] = value
+            } else {
+                delete newFilters[key]
+            }
+            onFilterChange(newFilters)
+            return
+        }
+
         const params = new URLSearchParams(searchParams.toString())
         if (value && value !== 'all') {
             params.set(key, value)
         } else {
             params.delete(key)
         }
-        router.push(`/book-trial?${params.toString()}`)
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
+    const getValue = (key: string) => {
+        if (currentFilters) return currentFilters[key] || "all"
+        return searchParams.get(key) || "all"
     }
 
     return (
@@ -30,7 +63,7 @@ export default function TimetableFilters({ locations, coaches, ageGroups = [] }:
             <div className="w-full sm:w-auto min-w-[150px]">
                 <Label className="text-xs mb-1.5 block">Location</Label>
                 <Select
-                    value={searchParams.get("locationId") || "all"}
+                    value={getValue("locationId")}
                     onValueChange={(val) => updateFilter("locationId", val)}
                 >
                     <SelectTrigger className="h-9">
@@ -48,7 +81,7 @@ export default function TimetableFilters({ locations, coaches, ageGroups = [] }:
             <div className="w-full sm:w-auto min-w-[150px]">
                 <Label className="text-xs mb-1.5 block">Class Type</Label>
                 <Select
-                    value={searchParams.get("type") || "all"}
+                    value={getValue("type")}
                     onValueChange={(val) => updateFilter("type", val)}
                 >
                     <SelectTrigger className="h-9">
@@ -56,10 +89,9 @@ export default function TimetableFilters({ locations, coaches, ageGroups = [] }:
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="PARKOUR">Parkour</SelectItem>
-                        <SelectItem value="TRICKING">Tricking</SelectItem>
-                        <SelectItem value="KIDS">Kids General</SelectItem>
-                        <SelectItem value="WORKSHOP">Workshop</SelectItem>
+                        {types.map((type) => (
+                            <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
@@ -67,7 +99,7 @@ export default function TimetableFilters({ locations, coaches, ageGroups = [] }:
             <div className="w-full sm:w-auto min-w-[150px]">
                 <Label className="text-xs mb-1.5 block">Coach</Label>
                 <Select
-                    value={searchParams.get("coachId") || "all"}
+                    value={getValue("coachId")}
                     onValueChange={(val) => updateFilter("coachId", val)}
                 >
                     <SelectTrigger className="h-9">
@@ -85,7 +117,7 @@ export default function TimetableFilters({ locations, coaches, ageGroups = [] }:
             <div className="w-40">
                 <Label className="text-xs mb-1.5 block">Age Group</Label>
                 <Select
-                    value={searchParams.get("ageGroupId") || "all"}
+                    value={getValue("ageGroupId")}
                     onValueChange={(val) => updateFilter("ageGroupId", val)}
                 >
                     <SelectTrigger className="h-9">
@@ -103,7 +135,7 @@ export default function TimetableFilters({ locations, coaches, ageGroups = [] }:
             <div className="w-40">
                 <Label className="text-xs mb-1.5 block">Level</Label>
                 <Select
-                    value={searchParams.get("level") || "all"}
+                    value={getValue("level")}
                     onValueChange={(val) => updateFilter("level", val)}
                 >
                     <SelectTrigger className="h-9">
@@ -123,8 +155,16 @@ export default function TimetableFilters({ locations, coaches, ageGroups = [] }:
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => router.push('/book-trial')}
-                    className="text-muted-foreground h-9"
+                    onClick={() => {
+                        if (onReset) {
+                            onReset()
+                        } else if (onFilterChange) {
+                            onFilterChange({})
+                        } else {
+                            router.push(pathname)
+                        }
+                    }}
+                    className="text-muted-foreground h-9 font-bold"
                 >
                     Reset
                 </Button>

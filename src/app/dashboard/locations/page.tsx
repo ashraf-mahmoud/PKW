@@ -27,7 +27,10 @@ export default async function LocationsPage() {
                         <div>
                             <div className="flex justify-between items-start mb-4">
                                 <h3 className="font-bold text-lg flex items-center gap-2">
-                                    <MapPin className="text-primary h-5 w-5" />
+                                    <div
+                                        className="w-3 h-3 rounded-full border shadow-sm"
+                                        style={{ backgroundColor: loc.color || "#3b82f6" }}
+                                    />
                                     {loc.name}
                                 </h3>
                                 <div className="flex gap-2">
