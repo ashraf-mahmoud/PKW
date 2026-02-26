@@ -38,7 +38,7 @@ const Header = ({ session }: { session?: any }) => {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
                         <span className="font-display text-xl md:text-2xl font-bold text-foreground">
-                            Parkour<span className="text-primary">Warriors</span>
+                            Parkour <span className="text-primary">Warriors</span>
                         </span>
                     </Link>
 
