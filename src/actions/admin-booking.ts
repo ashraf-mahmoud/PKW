@@ -123,6 +123,8 @@ export async function cancelBooking(bookingId: string) {
                     }
                 }
             }
+        }, {
+            timeout: 30000
         })
 
         await recordAudit({
@@ -308,6 +310,8 @@ export async function deleteBooking(bookingId: string) {
             await tx.booking.delete({
                 where: { id: bookingId }
             })
+        }, {
+            timeout: 30000
         })
 
         await recordAudit({
@@ -405,6 +409,8 @@ export async function deleteGroupBookings(studentId: string) {
                     }
                 }
             }
+        }, {
+            timeout: 30000
         })
 
         await recordAudit({
