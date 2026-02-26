@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { recordAudit } from "./audit"
+import { startOfWeek, addWeeks, addDays } from "date-fns"
 
 const ClassTemplateSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -491,15 +492,25 @@ export async function getUpcomingSessions(filters?: {
     coachId?: string
     startDate?: Date
     endDate?: Date
+    week?: number
 }) {
+    let queryStartDate = filters?.startDate || new Date()
+    let queryEndDate = filters?.endDate
+
+    if (filters?.week !== undefined && !filters.startDate) {
+        const today = new Date()
+        queryStartDate = startOfWeek(addWeeks(today, filters.week), { weekStartsOn: 1 })
+        queryEndDate = addDays(queryStartDate, 7)
+    }
+
     const where: any = {
         startTime: {
-            gte: filters?.startDate || new Date()
+            gte: queryStartDate
         }
     }
 
-    if (filters?.endDate) {
-        where.startTime.lte = filters.endDate
+    if (queryEndDate) {
+        where.startTime.lte = queryEndDate
     }
 
     if (filters?.locationId && filters.locationId !== "all") where.locationId = filters.locationId
