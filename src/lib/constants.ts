@@ -1,5 +1,5 @@
 // Editable placeholders - Update these values
-export const WHATSAPP_NUMBER = "60123456789"; // Replace with actual WhatsApp number
+export const WHATSAPP_NUMBER = "60104214215"; // Replace with actual WhatsApp number
 export const WHATSAPP_MESSAGE_TRIAL = "Hi Parkour Warriors! I'd like to book a trial class. My child is ___ years old.";
 export const WHATSAPP_MESSAGE_GENERAL = "Hi Parkour Warriors! I have a question about your programs.";
 export const WHATSAPP_MESSAGE_WORKSHOP = "Hi Parkour Warriors! I'd like to reserve a spot for the holiday workshop. My child is ___ years old.";
