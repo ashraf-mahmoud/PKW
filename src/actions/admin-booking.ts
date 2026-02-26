@@ -155,12 +155,17 @@ export async function moveBooking(bookingId: string, newSessionId: string, force
         const booking = await db.booking.findUnique({
             where: { id: bookingId },
             // @ts-ignore
-            include: { packagePurchase: true }
+            include: {
+                packagePurchase: true,
+                student: true,
+                classSession: { include: { template: true } }
+            }
         })
         if (!booking) return { success: false, error: "Booking not found" }
 
         const newSession = await db.classSession.findUnique({
-            where: { id: newSessionId }
+            where: { id: newSessionId },
+            include: { template: true }
         })
         if (!newSession) return { success: false, error: "New session not found" }
 
@@ -202,11 +207,22 @@ export async function moveBooking(bookingId: string, newSessionId: string, force
             }
         })
 
+        // Need to ensure it's imported at top, let's just use string formatting if we don't import it.
+
+        const oldDateStr = booking.classSession?.startTime ? new Date(booking.classSession.startTime).toLocaleDateString() : 'Unknown Date'
+        const newDateStr = newSession.startTime ? new Date(newSession.startTime).toLocaleDateString() : 'Unknown Date'
+
         await recordAudit({
             action: "BOOKING_MOVE",
             entityType: "BOOKING",
             entityId: bookingId,
-            details: JSON.stringify({ newSessionId, previousSessionId: booking.classSessionId })
+            studentId: booking.studentId,
+            studentName: booking.student?.name,
+            details: JSON.stringify({
+                newSessionId,
+                previousSessionId: booking.classSessionId,
+                summary: `Moved from ${oldDateStr} to ${newDateStr}`
+            })
         })
 
         revalidatePath('/dashboard/bookings')
