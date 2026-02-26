@@ -118,6 +118,67 @@ export async function getRecurringSessionsUntilMonthEnd(baseSessionId: string) {
     return [baseSession, ...matches]
 }
 
+export async function getBatchRecurringSessionsUntilMonthEnd(baseSessionIds: string[]) {
+    if (!baseSessionIds || baseSessionIds.length === 0) return []
+
+    // Get all base sessions first
+    const baseSessions = await db.classSession.findMany({
+        where: { id: { in: baseSessionIds } },
+        include: {
+            template: true,
+            location: true,
+            _count: { select: { bookings: true } },
+            schedule: true
+        }
+    })
+
+    if (baseSessions.length === 0) return []
+
+    const resultsByBase = await Promise.all(baseSessions.map(async (baseSession) => {
+        const start = baseSession.startTime
+        const endOfMonthDate = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59)
+
+        const dayOfWeek = start.getDay()
+        const hours = start.getHours()
+        const minutes = start.getMinutes()
+
+        const futureSessions = await db.classSession.findMany({
+            where: {
+                templateId: baseSession.templateId,
+                locationId: baseSession.locationId,
+                startTime: {
+                    gt: start,
+                    lte: endOfMonthDate
+                },
+            },
+            include: {
+                template: true,
+                location: true,
+                schedule: true,
+                _count: { select: { bookings: true } }
+            },
+            orderBy: { startTime: 'asc' }
+        })
+
+        const matches = futureSessions.filter(s =>
+            s.startTime.getDay() === dayOfWeek &&
+            s.startTime.getHours() === hours &&
+            s.startTime.getMinutes() === minutes
+        )
+
+        return [baseSession, ...matches]
+    }))
+
+    // Flatten and deduplicate by ID
+    const flattened = resultsByBase.flat()
+    const uniqueMap = new Map()
+    flattened.forEach(s => uniqueMap.set(s.id, s))
+
+    return Array.from(uniqueMap.values()).sort((a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    )
+}
+
 /**
  * Interleaves recurring sessions for multiple base sessions (e.g. Mon 7pm and Wed 7pm)
  * until the total credit count is reached.

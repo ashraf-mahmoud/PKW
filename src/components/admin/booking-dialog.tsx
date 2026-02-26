@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Search, Loader2, Package as PackageIcon, Info, AlertCircle, XCircle, MoveHorizontal, Trash2 } from "lucide-react"
-import { bookClass, getMultiRecurringSessions, getRecurringSessions, getRecurringSessionsUntilMonthEnd, getStudentFutureBookings, modifyBooking } from "@/actions/booking"
+import { bookClass, getBatchRecurringSessionsUntilMonthEnd, getMultiRecurringSessions, getRecurringSessions, getRecurringSessionsUntilMonthEnd, getStudentFutureBookings, modifyBooking } from "@/actions/booking"
 import { cancelBooking, deleteBooking, deleteGroupBookings } from "@/actions/admin-booking"
 import { getStudentPackages } from "@/actions/student-package"
 import { useToast } from "@/hooks/use-toast"
@@ -109,6 +109,7 @@ export default function BookingDialog({
     const [coaches, setCoaches] = useState<any[]>([])
     const [ageGroups, setAgeGroups] = useState<any[]>([])
     const [types, setTypes] = useState<any[]>([])
+    const fetchInProgress = React.useRef(false)
 
     const students = user.students || []
     const currentStudent = fullStudent || students.find((s: any) => s.id === selectedStudentId) || initialStudent
@@ -213,15 +214,9 @@ export default function BookingDialog({
 
             // 1. Process Recurring (End of Month)
             if (recurringSessions.length > 0) {
-                const chains = await Promise.all(
-                    recurringSessions.map(s => getRecurringSessionsUntilMonthEnd(s.id))
-                )
-                // Flatten and deduplicate by session ID
-                chains.forEach(chain => {
-                    chain.forEach(s => {
-                        if (!baseList.find(x => x.id === s.id)) baseList.push(s)
-                    })
-                })
+                const chains = await getBatchRecurringSessionsUntilMonthEnd(recurringSessions.map(s => s.id))
+                // Since it returns a flat sorted list, we can just use it
+                baseList = chains
             }
 
             // 2. Process Manual
@@ -327,6 +322,8 @@ export default function BookingDialog({
     }
 
     async function fetchSessions() {
+        if (fetchInProgress.current) return
+        fetchInProgress.current = true
         setFetching(true)
         try {
             const data = await getUpcomingSessions({ ...filters, week: weekOffset })
@@ -335,6 +332,7 @@ export default function BookingDialog({
             toast({ title: "Error", description: "Failed to fetch classes", variant: "destructive" })
         } finally {
             setFetching(false)
+            fetchInProgress.current = false
         }
     }
 

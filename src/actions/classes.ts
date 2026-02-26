@@ -587,7 +587,7 @@ export async function getUpcomingSessions(filters?: {
 
     let filteredSessions = sessions
 
-    if (filters?.ageGroupId) {
+    if (filters?.ageGroupId && filters.ageGroupId !== "all") {
         // Fetch group details (we have to do this since we can't join easily on a dynamic range)
         // Note: Using ANY to bypass stale client types
         const group = await (db as any).ageGroup.findUnique({ where: { id: filters.ageGroupId } })
