@@ -57,20 +57,26 @@ export async function getEligiblePackages(tx: any, studentId: string, classDate:
     const currentBookedMonth = classDate.getMonth();
     const currentBookedYear = classDate.getFullYear();
 
-    return activePackages.filter((pkg: any) => {
-        if (ignoreExpiry) return true; // Bypass all checks if forced
+    const eligible = activePackages.filter((pkg: any) => {
+        if (ignoreExpiry) return true;
 
         if (pkg.status === "PENDING_ACTIVATION") return true;
 
-        // Month lock check
         if (pkg.validUntil) {
             const validMonth = new Date(pkg.validUntil).getMonth();
             const validYear = new Date(pkg.validUntil).getFullYear();
-            return validMonth === currentBookedMonth && validYear === currentBookedYear;
+            const isMatch = validMonth === currentBookedMonth && validYear === currentBookedYear;
+            if (!isMatch) {
+                console.log(`[Credit Logic] Package ${pkg.id} disqualified: Month mismatch. Package Month: ${validMonth + 1}, Booking Month: ${currentBookedMonth + 1}`);
+            }
+            return isMatch;
         }
 
         return true;
     });
+
+    console.log(`[Credit Logic] Student ${studentId} eligible packages: ${eligible.length}/${activePackages.length}`);
+    return eligible;
 }
 
 /**

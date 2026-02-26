@@ -163,6 +163,9 @@ export async function importUsersCSV(formData: FormData) {
                             throw se
                         }
                     }
+                }, {
+                    maxWait: 15000,
+                    timeout: 60000 // (Applied timeout: 60s)
                 })
             } catch (err) {
                 console.error(`Error importing family ${family.email || family.name}:`, err)

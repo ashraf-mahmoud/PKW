@@ -386,7 +386,7 @@ async function syncScheduleSessions(scheduleId: string) {
 
     if (!schedule) return
 
-    const sessionsToCreate = []
+    const sessionsToCreate: any[] = []
 
     // Determine Start Date
     let start = new Date()
@@ -473,11 +473,14 @@ async function syncScheduleSessions(scheduleId: string) {
     }
 
     if (sessionsToCreate.length > 0) {
-        await db.$transaction(
-            sessionsToCreate.map(sessionData =>
-                db.classSession.create({ data: sessionData })
-            )
-        )
+        await db.$transaction(async (tx) => {
+            for (const sessionData of sessionsToCreate) {
+                await tx.classSession.create({ data: sessionData })
+            }
+        }, {
+            maxWait: 15000,
+            timeout: 60000 // (Applied timeout: 60s)
+        })
     }
 }
 

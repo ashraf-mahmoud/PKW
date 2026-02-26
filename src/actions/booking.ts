@@ -178,6 +178,7 @@ export async function bookClass(
     const forceByAdmin = options?.forceByAdmin || false
 
     try {
+        console.time(`booking-${studentId}`)
         await db.$transaction(async (tx) => {
             const student = await tx.student.findUnique({ where: { id: studentId } })
             if (!student) throw new Error("Student not found")
@@ -388,9 +389,10 @@ export async function bookClass(
                 }
             }
         }, {
-            maxWait: 10000, // 10s wait
-            timeout: 60000 // 60s timeout (Applied timeout: 60s)
+            maxWait: 15000,
+            timeout: 60000 // (Applied timeout: 60s)
         })
+        console.timeEnd(`booking-${studentId}`)
 
         await recordAudit({
             action: "BOOKING_CREATE",
@@ -468,6 +470,7 @@ export async function modifyBooking(
     try {
         const now = new Date()
         const ids = Array.isArray(newSessionIds) ? newSessionIds : [newSessionIds]
+        console.time(`modify-${studentId}`)
 
         await db.$transaction(async (tx) => {
             // Get future bookings inside transaction for consistency
@@ -679,9 +682,10 @@ export async function modifyBooking(
                 }
             }
         }, {
-            maxWait: 10000, // 10s wait
+            maxWait: 15000, // 10s wait
             timeout: 60000 // 60s timeout (Applied timeout: 60s)
         })
+        console.timeEnd(`modify-${studentId}`)
 
         await recordAudit({
             action: "BOOKING_MODIFY",

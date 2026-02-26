@@ -68,6 +68,9 @@ export async function signUp(data: z.infer<typeof SignUpSchema>) {
                     }
                 })
             }
+        }, {
+            maxWait: 15000,
+            timeout: 60000 // (Applied timeout: 60s)
         })
 
         return { success: true }

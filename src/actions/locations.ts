@@ -95,9 +95,9 @@ export async function updateLocation(id: string, formData: FormData) {
         }
 
         // Explicitly update images: Delete all and recreate to sync
-        await db.$transaction([
-            db.locationImage.deleteMany({ where: { locationId: id } }),
-            db.location.update({
+        await db.$transaction(async (tx) => {
+            await tx.locationImage.deleteMany({ where: { locationId: id } })
+            await tx.location.update({
                 where: { id },
                 data: {
                     ...dataToSave,
@@ -106,7 +106,10 @@ export async function updateLocation(id: string, formData: FormData) {
                     }
                 }
             })
-        ])
+        }, {
+            maxWait: 15000,
+            timeout: 60000 // (Applied timeout: 60s)
+        })
 
         revalidatePath('/dashboard/locations')
         revalidatePath('/book-trial')
