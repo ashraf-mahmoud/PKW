@@ -388,7 +388,8 @@ export async function bookClass(
                 }
             }
         }, {
-            timeout: 30000 // 30 seconds timeout to prevent Vercel Postgres hang
+            maxWait: 10000, // 10s wait
+            timeout: 30000 // 30s timeout
         })
 
         await recordAudit({
@@ -678,7 +679,8 @@ export async function modifyBooking(
                 }
             }
         }, {
-            timeout: 30000 // 30 seconds timeout to prevent Vercel Postgres hang
+            maxWait: 10000, // 10s wait
+            timeout: 30000 // 30s timeout
         })
 
         await recordAudit({

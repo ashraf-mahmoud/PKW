@@ -73,6 +73,9 @@ export async function createPayment(data: any) {
             })
 
             return p
+        }, {
+            maxWait: 10000,
+            timeout: 30000
         })
 
         await recordAudit({
@@ -168,6 +171,9 @@ export async function updatePayment(id: string, data: any) {
                     }
                 })
             }
+        }, {
+            maxWait: 10000,
+            timeout: 30000
         })
 
         await recordAudit({
@@ -246,6 +252,9 @@ export async function deletePayment(id: string) {
             await tx.payment.delete({
                 where: { id }
             })
+        }, {
+            maxWait: 10000,
+            timeout: 30000
         })
 
         await recordAudit({

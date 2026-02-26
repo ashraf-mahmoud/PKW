@@ -124,6 +124,7 @@ export async function cancelBooking(bookingId: string) {
                 }
             }
         }, {
+            maxWait: 10000,
             timeout: 30000
         })
 
@@ -311,6 +312,7 @@ export async function deleteBooking(bookingId: string) {
                 where: { id: bookingId }
             })
         }, {
+            maxWait: 10000,
             timeout: 30000
         })
 
@@ -410,6 +412,7 @@ export async function deleteGroupBookings(studentId: string) {
                 }
             }
         }, {
+            maxWait: 10000,
             timeout: 30000
         })
 
