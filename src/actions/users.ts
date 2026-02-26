@@ -432,6 +432,27 @@ export async function getUserWithFamily(id: string) {
                         include: {
                             package: true
                         }
+                    },
+                    creditLedger: {
+                        include: {
+                            booking: {
+                                include: {
+                                    classSession: {
+                                        include: {
+                                            template: true
+                                        }
+                                    }
+                                }
+                            },
+                            packagePurchase: {
+                                include: {
+                                    package: true
+                                }
+                            }
+                        },
+                        orderBy: {
+                            createdAt: 'desc'
+                        }
                     }
                 }
             }

@@ -178,6 +178,8 @@ export async function bookClass(
     const forceByAdmin = options?.forceByAdmin || false
 
     try {
+        const bookedClasses: string[] = []
+        let firstClassInfo = ""
         console.time(`booking-${studentId}`)
         await db.$transaction(async (tx) => {
             const student = await tx.student.findUnique({ where: { id: studentId } })
@@ -289,6 +291,12 @@ export async function bookClass(
 
                 if (!classSession) continue
 
+                // Add to audit info
+                const classDateStr = format(classSession.startTime, 'MMM d, yyyy h:mm a')
+                const info = `${classSession.template.name} on ${classDateStr}`
+                bookedClasses.push(info)
+                if (!firstClassInfo) firstClassInfo = info
+
                 // Check for duplicate
                 const existing = await tx.booking.findFirst({
                     where: {
@@ -399,7 +407,12 @@ export async function bookClass(
             entityType: "BOOKING",
             entityId: studentId, // Simplified for bulk
             studentId,
-            details: { sessionCount: ids.length, packageId: options?.packageId }
+            details: {
+                sessionCount: ids.length,
+                packageId: options?.packageId,
+                summary: ids.length === 1 ? firstClassInfo : `${ids.length} classes starting with ${firstClassInfo}`,
+                classes: bookedClasses
+            }
         })
 
         revalidatePath('/dashboard/book')

@@ -2,7 +2,7 @@
 
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, CreditCard, Clock, MapPin, CheckCircle2, XCircle } from "lucide-react"
+import { Calendar, CreditCard, Clock, MapPin, CheckCircle2, XCircle, Activity } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function UserHistory({ students }: { students: any[] }) {
@@ -132,6 +132,65 @@ export default function UserHistory({ students }: { students: any[] }) {
                                                     <Badge variant="outline" className="text-[10px] uppercase font-bold text-green-600 border-green-200">
                                                         {payment.status}
                                                     </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Credit History (Ledger) */}
+                        <div className="space-y-4">
+                            <h4 className="font-bold flex items-center gap-2 text-muted-foreground uppercase text-xs tracking-wider">
+                                <Activity className="w-3.5 h-3.5" />
+                                Credit History
+                            </h4>
+
+                            <div className="grid gap-3">
+                                {!student.creditLedger || student.creditLedger.length === 0 ? (
+                                    <div className="p-8 text-center border-2 border-dashed rounded-xl bg-muted/20 text-muted-foreground text-sm italic">
+                                        No credit history found for this student.
+                                    </div>
+                                ) : (
+                                    student.creditLedger.map((ledger: any) => (
+                                        <div key={ledger.id} className="p-4 rounded-xl border bg-card flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:shadow-md">
+                                            <div className="flex items-start gap-4">
+                                                <div className={`mt-1 p-2 rounded-lg ${ledger.type === 'DEBIT' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                                    <Activity className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-sm">
+                                                        {ledger.type === 'DEBIT' ? (
+                                                            ledger.booking?.classSession?.template?.name ? (
+                                                                `Booking: ${ledger.booking.classSession.template.name}`
+                                                            ) : (
+                                                                ledger.reason || "Credit Deduction"
+                                                            )
+                                                        ) : (
+                                                            ledger.reason === "BOOKING_CANCELLED" ? "Booking Refund" : "Credit Added"
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground flex flex-col md:flex-row md:items-center gap-x-3 mt-1">
+                                                        <span>{format(new Date(ledger.createdAt), 'MMM d, yyyy HH:mm')}</span>
+                                                        {ledger.booking?.classSession && (
+                                                            <span className="flex items-center gap-1 font-medium text-primary">
+                                                                <Calendar className="w-3 h-3" />
+                                                                {format(new Date(ledger.booking.classSession.startTime), 'EEE, MMM d @ h:mm a')}
+                                                            </span>
+                                                        )}
+                                                        {ledger.packagePurchase?.package && (
+                                                            <span className="bg-muted px-1.5 py-0.5 rounded text-[10px]">
+                                                                Package: {ledger.packagePurchase.package.name}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4 self-end md:self-center">
+                                                <div className={`font-bold text-lg ${ledger.type === 'DEBIT' ? 'text-red-500' : 'text-green-500'}`}>
+                                                    {ledger.type === 'DEBIT' ? '-' : '+'}{ledger.amount} Credit
                                                 </div>
                                             </div>
                                         </div>

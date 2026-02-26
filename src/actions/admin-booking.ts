@@ -3,6 +3,7 @@
 import { db } from "@/lib/db"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
+import { format } from "date-fns"
 import { recordAudit } from "./audit"
 import { refundCredits, deductCredits } from "@/lib/credit-logic"
 
@@ -53,7 +54,14 @@ export async function cancelBooking(bookingId: string) {
     }
 
     try {
-        const booking = await db.booking.findUnique({ where: { id: bookingId } })
+        const booking = await db.booking.findUnique({
+            where: { id: bookingId },
+            include: {
+                classSession: {
+                    include: { template: true }
+                }
+            }
+        })
         if (!booking) return { success: false, error: "Booking not found" }
         if (booking.status === 'CANCELLED') return { success: true }
 
@@ -128,6 +136,8 @@ export async function cancelBooking(bookingId: string) {
             timeout: 60000 // (Applied timeout: 60s)
         })
 
+        const sessionInfo = booking.classSession ? `${booking.classSession.template.name} on ${format(booking.classSession.startTime, 'MMM d, yyyy h:mm a')}` : 'Unknown Session'
+
         await recordAudit({
             action: "BOOKING_CANCEL",
             entityType: "BOOKING",
@@ -135,6 +145,8 @@ export async function cancelBooking(bookingId: string) {
             studentId: booking.studentId,
             details: {
                 status: 'CANCELLED',
+                summary: `Cancelled ${sessionInfo}`,
+                session: sessionInfo,
                 packageId: (booking as any).packagePurchaseId || undefined
             }
         })
@@ -212,8 +224,8 @@ export async function moveBooking(bookingId: string, newSessionId: string, force
 
         // Need to ensure it's imported at top, let's just use string formatting if we don't import it.
 
-        const oldDateStr = booking.classSession?.startTime ? new Date(booking.classSession.startTime).toLocaleDateString() : 'Unknown Date'
-        const newDateStr = newSession.startTime ? new Date(newSession.startTime).toLocaleDateString() : 'Unknown Date'
+        const oldInfo = `${booking.classSession.template.name} on ${format(booking.classSession.startTime, 'MMM d, yyyy h:mm a')}`
+        const newInfo = `${newSession.template.name} on ${format(newSession.startTime, 'MMM d, yyyy h:mm a')}`
 
         await recordAudit({
             action: "BOOKING_MOVE",
@@ -221,11 +233,13 @@ export async function moveBooking(bookingId: string, newSessionId: string, force
             entityId: bookingId,
             studentId: booking.studentId,
             studentName: booking.student?.name,
-            details: JSON.stringify({
+            details: {
                 newSessionId,
                 previousSessionId: booking.classSessionId,
-                summary: `Moved from ${oldDateStr} to ${newDateStr}`
-            })
+                summary: `Moved from ${oldInfo} to ${newInfo}`,
+                from: oldInfo,
+                to: newInfo
+            }
         })
 
         revalidatePath('/dashboard/bookings')
@@ -245,7 +259,12 @@ export async function deleteBooking(bookingId: string) {
 
     try {
         const booking = await db.booking.findUnique({
-            where: { id: bookingId }
+            where: { id: bookingId },
+            include: {
+                classSession: {
+                    include: { template: true }
+                }
+            }
         })
 
         if (!booking) return { success: false, error: "Booking not found" }
@@ -316,6 +335,8 @@ export async function deleteBooking(bookingId: string) {
             timeout: 60000 // (Applied timeout: 60s)
         })
 
+        const sessionInfo = booking.classSession ? `${booking.classSession.template.name} on ${format(booking.classSession.startTime, 'MMM d, yyyy h:mm a')}` : `Session ID: ${booking.classSessionId}`
+
         await recordAudit({
             action: "BOOKING_DELETE",
             entityType: "BOOKING",
@@ -323,7 +344,8 @@ export async function deleteBooking(bookingId: string) {
             studentId: booking.studentId,
             details: {
                 packageId: (booking as any).packagePurchaseId || undefined,
-                summary: `Delete booking for session ${booking.classSessionId}`
+                summary: `Deleted booking for ${sessionInfo}`,
+                session: sessionInfo
             }
         })
         revalidatePath('/dashboard/book')
