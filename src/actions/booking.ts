@@ -481,12 +481,13 @@ export async function bookClass(
         return { success: true }
 
     } catch (error) {
-        // Suppress expected warning log
-        if ((error as Error).message === "EXPIRY_WARNING") {
-            return { success: false, error: "EXPIRY_WARNING" }
-        }
+        const errMsg = (error as Error).message
+        // Suppress expected warning log and return clean codes
+        if (errMsg === "EXPIRY_WARNING") return { success: false, error: "EXPIRY_WARNING" }
+        if (errMsg === "INSUFFICIENT_CREDITS") return { success: false, error: "INSUFFICIENT_CREDITS" }
+
         console.error("Booking Error:", error)
-        return { success: false, error: `${(error as Error).message || "Booking failed"} (Applied timeout: 60s)` }
+        return { success: false, error: `${errMsg || "Booking failed"} (Applied timeout: 60s)` }
     }
 }
 
@@ -773,11 +774,12 @@ export async function modifyBooking(
         revalidatePath('/dashboard/bookings')
         return { success: true }
     } catch (error) {
-        // Suppress expected warning log
-        if ((error as Error).message === "EXPIRY_WARNING") {
-            return { success: false, error: "EXPIRY_WARNING" }
-        }
+        const errMsg = (error as Error).message
+        // Suppress expected warning log and return clean codes
+        if (errMsg === "EXPIRY_WARNING") return { success: false, error: "EXPIRY_WARNING" }
+        if (errMsg === "INSUFFICIENT_CREDITS") return { success: false, error: "INSUFFICIENT_CREDITS" }
+
         console.error("Modify Booking Error:", error)
-        return { success: false, error: `${(error as Error).message || "Failed to modify bookings"} (Applied timeout: 60s)` }
+        return { success: false, error: `${errMsg || "Failed to modify bookings"} (Applied timeout: 60s)` }
     }
 }
