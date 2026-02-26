@@ -136,26 +136,26 @@ export async function bulkDeleteUsers(ids: string[]) {
 
 
 const StudentSchema = z.object({
-    id: z.string().optional(),
+    id: z.string().nullish(),
     name: z.string().min(1, "Name is required"),
-    studentCode: z.string().optional(),
+    studentCode: z.string().nullish().transform(v => v ?? undefined),
     level: z.coerce.number().min(1).default(1),
     dob: z.coerce.date(),
-    medicalInfo: z.string().optional(),
-    waiverSigned: z.boolean().default(false),
-    waiverFile: z.string().optional(),
+    medicalInfo: z.string().nullish().transform(v => v ?? undefined),
+    waiverSigned: z.boolean().nullish().transform(v => v ?? false),
+    waiverFile: z.string().nullish().transform(v => v ?? undefined),
 })
 
 const UserFamilySchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    email: z.string().email("Invalid email"),
-    role: z.string().default("PARENT"),
+    name: z.string().min(1, "Name is required").nullish().transform(v => v ?? ""),
+    email: z.string().email("Invalid email").nullish().transform(v => v ?? ""),
+    role: z.string().nullish().transform(v => v ?? "PARENT"),
 
     // Profile
-    phone: z.string().optional(),
-    phone2: z.string().optional(), // Parent 2 Contact
-    marketingSource: z.string().optional(),
-    trialDate: z.coerce.date().optional(),
+    phone: z.string().nullish().transform(v => v ?? undefined),
+    phone2: z.string().nullish().transform(v => v ?? undefined), // Parent 2 Contact
+    marketingSource: z.string().nullish().transform(v => v ?? undefined),
+    trialDate: z.coerce.date().nullish().transform(v => v ?? undefined),
 
     students: z.array(StudentSchema).optional()
 })
