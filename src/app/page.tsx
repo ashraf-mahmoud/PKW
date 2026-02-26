@@ -2,9 +2,9 @@ import Link from "next/link";
 import { MessageCircle, Shield, Users, TrendingUp, Award, ChevronRight, Target, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getWhatsAppLink, WHATSAPP_MESSAGE_TRIAL } from "@/lib/constants";
-import heroImage from "@/assets/hero-parkour.jpg";
-import parkourAction from "@/assets/parkour-action.jpg";
-import trickingAction from "@/assets/tricking-action.jpg";
+import heroImage from "@/assets/hero-parkour-new.png";
+import parkourAction from "@/assets/parkour-action-new.png";
+import trickingAction from "@/assets/tricking-action-new.png";
 
 export default function Home() {
   return (
