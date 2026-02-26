@@ -5,7 +5,7 @@ declare global {
 }
 
 const getUrl = () => {
-    let url = process.env.STORAGE_POSTGRES_PRISMA_URL || process.env.DATABASE_URL
+    let url = process.env.POSTGRES_PRISMA_URL || process.env.STORAGE_POSTGRES_PRISMA_URL || process.env.DATABASE_URL
     if (url && url.includes('pooler.ap-southeast-1.aws.neon.tech') && !url.includes('pgbouncer=true')) {
         url += url.includes('?') ? '&pgbouncer=true' : '?pgbouncer=true'
     }
