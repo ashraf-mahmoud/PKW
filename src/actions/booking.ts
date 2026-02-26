@@ -389,7 +389,7 @@ export async function bookClass(
             }
         }, {
             maxWait: 10000, // 10s wait
-            timeout: 30000 // 30s timeout
+            timeout: 60000 // 60s timeout (Applied timeout: 60s)
         })
 
         await recordAudit({
@@ -410,7 +410,7 @@ export async function bookClass(
             return { success: false, error: "EXPIRY_WARNING" }
         }
         console.error("Booking Error:", error)
-        return { success: false, error: (error as Error).message || "Booking failed" }
+        return { success: false, error: `${(error as Error).message || "Booking failed"} (Applied timeout: 60s)` }
     }
 }
 
@@ -680,7 +680,7 @@ export async function modifyBooking(
             }
         }, {
             maxWait: 10000, // 10s wait
-            timeout: 30000 // 30s timeout
+            timeout: 60000 // 60s timeout (Applied timeout: 60s)
         })
 
         await recordAudit({
@@ -700,6 +700,6 @@ export async function modifyBooking(
             return { success: false, error: "EXPIRY_WARNING" }
         }
         console.error("Modify Booking Error:", error)
-        return { success: false, error: (error as Error).message || "Failed to modify bookings" }
+        return { success: false, error: `${(error as Error).message || "Failed to modify bookings"} (Applied timeout: 60s)` }
     }
 }

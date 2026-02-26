@@ -125,7 +125,7 @@ export async function cancelBooking(bookingId: string) {
             }
         }, {
             maxWait: 10000,
-            timeout: 30000
+            timeout: 60000 // (Applied timeout: 60s)
         })
 
         await recordAudit({
@@ -144,7 +144,7 @@ export async function cancelBooking(bookingId: string) {
         return { success: true }
     } catch (error) {
         console.error("Cancel Booking Error:", error)
-        return { success: false, error: "Failed to cancel booking" }
+        return { success: false, error: `Failed to cancel booking (Applied timeout: 60s)` }
     }
 }
 
@@ -313,7 +313,7 @@ export async function deleteBooking(bookingId: string) {
             })
         }, {
             maxWait: 10000,
-            timeout: 30000
+            timeout: 60000 // (Applied timeout: 60s)
         })
 
         await recordAudit({
@@ -330,7 +330,7 @@ export async function deleteBooking(bookingId: string) {
         return { success: true }
     } catch (error) {
         console.error("Delete Booking Error:", error)
-        return { success: false, error: "Failed to delete booking" }
+        return { success: false, error: `Failed to delete booking (Applied timeout: 60s)` }
     }
 }
 
@@ -413,7 +413,7 @@ export async function deleteGroupBookings(studentId: string) {
             }
         }, {
             maxWait: 10000,
-            timeout: 30000
+            timeout: 60000 // (Applied timeout: 60s)
         })
 
         await recordAudit({
@@ -431,7 +431,7 @@ export async function deleteGroupBookings(studentId: string) {
         return { success: true }
     } catch (error) {
         console.error("Delete Group Bookings Error:", error)
-        return { success: false, error: "Failed to delete group bookings" }
+        return { success: false, error: `Failed to delete group bookings (Applied timeout: 60s)` }
     }
 }
 
