@@ -119,6 +119,8 @@ export default function HistoryPage() {
                 return { label: 'Payment Added', color: 'bg-amber-100 text-amber-800 border-amber-200' }
             case 'PAYMENT_UPDATE':
                 return { label: 'Payment Updated', color: 'bg-orange-100 text-orange-800 border-orange-200' }
+            case 'PAYMENT_DELETE':
+                return { label: 'Payment Deleted', color: 'bg-red-100 text-red-800 border-red-200' }
             case 'USER_CREATE':
                 return { label: 'Family Created', color: 'bg-sky-100 text-sky-800 border-sky-200' }
             case 'USER_UPDATE':
@@ -264,6 +266,7 @@ export default function HistoryPage() {
                                     <SelectItem value="BOOKING_CREATE">Booking Created</SelectItem>
                                     <SelectItem value="BOOKING_CANCEL">Booking Cancelled</SelectItem>
                                     <SelectItem value="PAYMENT_ADD">Payment Added</SelectItem>
+                                    <SelectItem value="PAYMENT_DELETE">Payment Deleted</SelectItem>
                                     <SelectItem value="STUDENT_CREATE">Student Added</SelectItem>
                                     <SelectItem value="STUDENT_UPDATE">Student Updated</SelectItem>
                                     <SelectItem value="USER_UPDATE">Family Updated</SelectItem>

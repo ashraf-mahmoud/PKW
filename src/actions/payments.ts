@@ -252,7 +252,11 @@ export async function deletePayment(id: string) {
             action: "PAYMENT_DELETE",
             entityType: "PAYMENT",
             entityId: id,
-            studentId: payment.studentId
+            studentId: payment.studentId,
+            details: {
+                amount: Number(payment.amount),
+                summary: `Deleted payment of ${Number(payment.amount)}`
+            }
         })
 
         revalidatePath('/dashboard/payments')
