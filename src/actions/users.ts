@@ -100,6 +100,9 @@ export async function bulkDeleteUsers(ids: string[]) {
             await tx.user.deleteMany({
                 where: { id: { in: targetIds } }
             })
+        }, {
+            maxWait: 10000,
+            timeout: 60000 // (Applied timeout: 60s)
         })
 
         // Log deletions
@@ -202,6 +205,9 @@ export async function createUserWithFamily(data: any) {
                 }
             })
             return u
+        }, {
+            maxWait: 10000,
+            timeout: 60000 // (Applied timeout: 60s)
         })
 
         await recordAudit({

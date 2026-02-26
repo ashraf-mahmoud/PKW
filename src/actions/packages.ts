@@ -56,6 +56,9 @@ export async function upsertPackage(data: any) {
                         }
                     })
                 }
+            }, {
+                maxWait: 10000,
+                timeout: 60000 // (Applied timeout: 60s)
             })
         } else {
             // Create New
@@ -113,6 +116,9 @@ export async function deletePackage(id: string) {
             await tx.package.delete({
                 where: { id }
             })
+        }, {
+            maxWait: 10000,
+            timeout: 60000 // (Applied timeout: 60s)
         })
 
         revalidatePath('/dashboard/settings/packages')

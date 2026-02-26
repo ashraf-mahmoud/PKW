@@ -112,7 +112,13 @@ export async function deductCredits(tx: any, {
         }
     }
 
-    if (totalAvailable < amount) throw new Error("Insufficient credits in eligible packages for this month.");
+    if (totalAvailable < amount) {
+        console.error(`[Credit Logic] Insufficient credits for student ${studentId}. Requested: ${amount}, Available: ${totalAvailable}. Class Date: ${classDate.toISOString()}`);
+        if (eligiblePackages.length === 0) {
+            console.error(`[Credit Logic] No eligible packages found. (Check month-lock or status)`);
+        }
+        throw new Error("Insufficient credits in eligible packages for this month.");
+    }
 
     let remainingToDeduct = amount;
     const deductions = [];

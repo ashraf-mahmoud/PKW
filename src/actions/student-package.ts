@@ -65,5 +65,8 @@ export async function adjustStudentCredits(
         })
 
         return { success: true, package: updatedPkg }
+    }, {
+        maxWait: 10000,
+        timeout: 60000 // (Applied timeout: 60s)
     })
 }
